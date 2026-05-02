@@ -26,7 +26,7 @@ class PetWindow(QWidget):
         # ---------- 3. 角色图片显示 ----------
         self.label = QLabel(self)
         self.label.setGeometry(0, 0, width, height)   # 图片铺满整个窗口
-        self.pixmap = QPixmap("assets\expressions\MikuQ.jpg")
+        self.pixmap = QPixmap(r"assets\expressions\MikuQ.jpg")
         self.label.setPixmap(self.pixmap.scaled(
             width, height,
             Qt.KeepAspectRatio,
@@ -62,6 +62,6 @@ class PetWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # 请换成你自己的图片路径
-    window = PetWindow("D:\Dreami\assets\expressions\MikuQ.jpg")
+    window = PetWindow(r"D:\Dreami\assets\expressions\MikuQ.jpg")
     window.show()
     sys.exit(app.exec_())
