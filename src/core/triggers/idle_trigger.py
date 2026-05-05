@@ -2,7 +2,7 @@ import ctypes
 from ctypes import wintypes
 
 class IdleTrigger:
-    def __init__(self, idle_time=60, speak_welcome=True):
+    def __init__(self, idle_time=5, speak_welcome=True):
         """
         idle_time: 多少秒无操作就算“挂机”
         speak_welcome: 挂机后再次操作是否说欢迎回来

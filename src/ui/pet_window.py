@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QAction, QMenu
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPixmap
-
+from .bubble import Bubble
 
 class PetWindow(QWidget):
     """
@@ -37,9 +37,16 @@ class PetWindow(QWidget):
         # ---------- 4. 定位到桌面右下角 ----------
         self.move_to_bottom_right()
 
-        # ---------- 5. 其他可能用到的变量 ----------
+        # ---------- 5.加一个右键菜单 ----------
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+        # ---------- 6. 其他可能用到的变量 ----------
         self.dragging = False       # 鼠标拖拽移动（第一步可不做）
         self.offset = QPoint()
+        self.bubble = None          # 对话气泡实例
+
+        
 
     def move_to_bottom_right(self):
         """将窗口移动到主屏幕右下角（留一点边距）"""
@@ -53,15 +60,21 @@ class PetWindow(QWidget):
         """右键菜单"""
         menu = QMenu(self)
         exit_action = QAction("退出 Dreami", self)
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(QApplication.quit)
         menu.addAction(exit_action)
         menu.exec_(self.mapToGlobal(pos))
+
+    def show_bubble(self, text, duration=3000):
+        """显示对话气泡"""
+        if not self.bubble:
+            self.bubble = Bubble(QLabel(self))  # 父组件是宠物窗口
+            self.bubble.move(self.width() - self.bubble.width() - 10, -self.bubble.height() - 10)
+        self.bubble.show_message(text, duration)
 
 
 # 下面几行只在直接运行本文件时做测试用，平时由 main.py 调用
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # 请换成你自己的图片路径
     window = PetWindow(r"D:\Dreami\assets\expressions\MikuQ.jpg")
     window.show()
     sys.exit(app.exec_())
