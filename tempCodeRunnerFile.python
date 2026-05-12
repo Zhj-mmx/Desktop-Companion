@@ -1,0 +1,4 @@
+from src.utils.llm_client import LLMClient
+
+reply = LLMClient.generate
+print(reply("早上","下雨"))
