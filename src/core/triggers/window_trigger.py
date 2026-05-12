@@ -4,7 +4,7 @@ class WindowTrigger:
     def __init__(self):
         self.last_title = ''  # 上一次的窗口标题
 
-    def check(self):
+    def generate(self):
         """检测当前窗口，如果和上次不同且包含关键词，就返回一句话"""
         try:
             win = gw.getActiveWindow()
@@ -29,3 +29,17 @@ class WindowTrigger:
         else:
             # 其他窗口就不说话，也可以返回一句通用的话
             return None
+    
+    def check(self):
+        """外部调用这个方法来获取触发结果"""
+        try:
+            win = gw.getActiveWindow()
+            title = win.title if win else ''
+        except:
+            title = ''  # 如果获取失败，就当没窗口
+
+        if not title or title == self.last_title:
+            return None  # 窗口没变，不重复说话
+
+        self.last_title = title
+        return self.last_title  # 返回当前窗口标题，供 AI 生成回复使用

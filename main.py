@@ -13,24 +13,18 @@ import os                       # 用于处理文件路径和切换工作目录
 import sys                      # 用于退出程序（比如导入失败时直接结束）         
 
 # ---------- 尝试导入 PyQt5 和我们自己写的各个模块 ----------
-try:
     # PyQt5 是制作窗口界面的工具库
-    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
-    from PyQt5.QtCore import QTimer, Qt          # QTimer 是定时器，Qt 包含一些常量
-    from src.ui.bubble import Bubble             # 对话气泡组件（显示文字的泡泡）
-    from src.core.triggers.time_trigger import TimeTrigger      # 时间触发器（比如早上、中午）
-    from src.core.triggers.idle_trigger import IdleTrigger      # 空闲触发器（检测键盘鼠标多久没动）
-    from src.core.triggers.window_trigger import WindowTrigger  # 窗口触发器（检测当前是什么软件）
-    from src.core.triggers.smart_reply import SmartReplyManager # 智能回复管理器（综合 AI 和对话库）
-    from src.ui.pet_window import PetWindow                     # 宠物窗口基类（透明无边框窗口）
-    from src.utils.dialogue_manager import DialogueManager      # 对话管理器（从 JSON 里随机抽句子）
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt5.QtCore import QTimer, Qt          # QTimer 是定时器，Qt 包含一些常量
+from src.ui.bubble import Bubble             # 对话气泡组件（显示文字的泡泡）
+from src.core.triggers.time_trigger import TimeTrigger      # 时间触发器（比如早上、中午）
+from src.core.triggers.idle_trigger import IdleTrigger      # 空闲触发器（检测键盘鼠标多久没动）
+from src.core.triggers.window_trigger import WindowTrigger  # 窗口触发器（检测当前是什么软件）
+from src.core.triggers.smart_reply import SmartReplyManager # 智能回复管理器（综合 AI 和对话库）
+from src.ui.pet_window import PetWindow                     # 宠物窗口基类（透明无边框窗口）
+from src.utils.dialogue_manager import DialogueManager      # 对话管理器（从 JSON 里随机抽句子）
+from PyQt5.QtGui import QPixmap              # 用于处理图片
 
-    from PyQt5.QtGui import QPixmap              # 用于处理图片
-except ImportError as e:
-    # 如果上面任何一个模块导入失败（比如没装 PyQt5 或代码路径写错），打印错误并退出
-    print(f"导入模块失败: {e}")
-    print("请确保已安装 PyQt5 并检查模块路径")
-    sys.exit(1)
 
 # ===================== 2. 定义主窗口类 DreamiWindow =====================
 class DreamiWindow(PetWindow):
@@ -57,15 +51,11 @@ class DreamiWindow(PetWindow):
         self.window_trigger = WindowTrigger() # 检测当前窗口标题，返回如 "coding", "anime"
 
         # ----- 初始化智能回复管理器（支持 AI 生成回复）-----
-        from src.utils.llm_client import LLMClient                   # AI 客户端（连接 DeepSeek）
-        from src.utils.personality import PERSONALITY_PROMPTS        # 性格提示词库
+        from src.utils.llm_client import LLMClient                   # AI 客户端（连接 DeepSeek）  
         from src.core.triggers.smart_reply import SmartReplyManager  # 智能回复管理器
 
         # 创建 AI 客户端，指定模型和性格
-        self.llm_client = LLMClient(
-            model="Deepseek-v4-pro",
-            personality_prompt=PERSONALITY_PROMPTS["default"]
-        )
+        self.llm_client = LLMClient(model="deepseek-chat")
         # 创建智能回复管理器，把 AI 客户端和对话管理器都交给它（它可以决定用哪种方式回复）
         self.smart_reply_manager = SmartReplyManager(self.llm_client, self.dialogue_manager)
 
@@ -86,31 +76,25 @@ class DreamiWindow(PetWindow):
         time_text = self.time_trigger.check()
         if time_text:   # 如果时间触发器返回了内容（比如 "morning"）
             print(f"[DEBUG] 时间触发: {time_text}")  # 调试信息，方便看触发器是否工作
-            reply = self.smart_reply_manager.get_reply(time_text, False)  # 获取回复（优先 AI 或对话库）
-            if reply:
-                self.bubble.show_message(reply)  # 让气泡显示这句回复
+            self.bubble.show_message(time_text)  # 让气泡显示这句回复
 
         # --- 检查空闲触发 ---
         idle_text = self.idle_trigger.check()
         if idle_text:
             print(f"[DEBUG] 空闲触发: {idle_text}")
-            reply = self.smart_reply_manager.get_reply(idle_text, False)
-            if reply:
-                self.bubble.show_message(reply)
+            self.bubble.show_message(idle_text)
 
         # --- 检查窗口触发 ---
         window_text = self.window_trigger.check()
         if window_text:
-            print(f"[DEBUG] 窗口触发: {window_text}")
-            reply = self.smart_reply_manager.get_reply(window_text, False)
-            if reply:
-                self.bubble.show_message(reply)
+            llm_text = self.llm_client.generate(window_text)  # 直接用 LLMClient 根据窗口标签生成回复
+            print(f"[DEBUG] 窗口触发: {llm_text}")
+            self.bubble.show_message(llm_text)  # 显示 AI 生成的回复
+
+
 
         # --- 额外添加：随机闲话（每秒都有概率说一句话，但实际由 dialogue_manager 控制频率）---
-        random_text = self.dialogue_manager.get_random("random_trigger")
-        if random_text:
-            print(f"[DEBUG] 随机触发: {random_text}")
-            self.bubble.show_message(random_text)
+        
 
 
 # ===================== 3. 程序入口 main 函数 =====================

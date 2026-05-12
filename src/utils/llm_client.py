@@ -1,9 +1,9 @@
 # ======================== 1. 导入工具 ========================
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 from openai import OpenAI                     # 注意：现在只用 OpenAI 官方库，不需要 requests
 from config import settings                   # 读取配置中的 API 密钥等
-from personality import PERSONALITY_PROMPTS
+from src.utils.personality import PERSONALITY_PROMPTS
 # ======================== 2. 创建 DeepSeek 客户端 ========================
 # 这就好比给 Dreami 办了一张“AI 通讯卡”，以后发消息都通过这张卡。
 client = OpenAI(
@@ -23,7 +23,7 @@ class LLMClient:
     当你给它一个标签（比如 "morning"），它会去问 DeepSeek，
     然后带回来一句贴合 Dreami 性格的回复。
     """
-    def __init__(self, model: str = "deepseek-chat", personality_prompt: str = PERSONALITY_PROMPTS):
+    def __init__(self, model: str = "deepseek-chat", personality_prompt: Optional[Union[str, Dict]] = PERSONALITY_PROMPTS):
         """
         初始化——相当于给这个中枢装好“大脑版本”和“性格说明书”。
         参数:
@@ -31,7 +31,11 @@ class LLMClient:
             personality_prompt: 性格设定，告诉 AI 用什么样的语气说话。
         """
         self.model = model                     # 记住模型名称
-        self.personality_prompt = personality_prompt or ""  # 性格提示词（没有就设为空）
+        # 确保personality_prompt是字符串
+        if isinstance(personality_prompt, dict):
+            self.personality_prompt = personality_prompt.get("default", "")
+        else:
+            self.personality_prompt = personality_prompt or ""
         self.timeout = settings.LLM_TIMEOUT    # 最多等多长时间（秒）
 
     def generate(self, tag: str, context: Optional[Dict] = None) -> Optional[str]:
@@ -42,7 +46,7 @@ class LLMClient:
         如果网络超时或其他原因失败，会安静地返回 None。
         """
         # 准备好要对 AI 说的话
-        user_message = self._build_prompt(tag, context)   # 将标签转换成具体的问题内容
+        user_message = self._build_prompt(tag)   # 将标签转换成具体的问题内容
 
         try:
             # --- 这下面就是使用 OpenAI 库的“信封”寄信方式 ---
@@ -66,14 +70,14 @@ class LLMClient:
             logging.error(f"LLM请求失败: {e}")
             return None
 
-    def _build_prompt(self, tag: str, context: Optional[Dict]) -> str:
+    def _build_prompt(self, tag: str) -> str:
         """
         根据标签生成给 AI 的“用户消息”。
         目前很简单，直接返回标签，未来可以混入天气、时间之类的额外信息。
         """
         # 现在只是原样返回，但你可以在这里发挥想象力，比如：
         # return f"现在的情境是：{tag}，而且外面的天气是{context['weather']}"
-        return f"现在的情境是：{tag}，而且外面的天气是{context['weather']}"
+        return f"现在的情境是：{tag}"
 
     def _process_response(self, response) -> str:
         """
