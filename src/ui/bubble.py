@@ -27,19 +27,24 @@ class Bubble(QLabel):
         
         # 初始化动画
         self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
-        self.fade_animation.setDuration(500)  # 淡出时间500ms
+        self.fade_animation.setDuration(1500)  # 淡出时间500ms
         self.fade_animation.setStartValue(1.0)
         self.fade_animation.setEndValue(0.0)
         self.fade_animation.finished.connect(self.hide)
         
-    def show_message(self, text, duration=3000):
+    def show_message(self, text, duration=3000, x_offset=0):
         """
         显示消息气泡
         :param text: 要显示的文字
         :param duration: 显示持续时间（毫秒）
+        :param x_offset: X轴偏移量（正值向右，负值向左）
         """
         self.setText(text)
         self.adjustSize()  # 自动调整大小
+        parent_width = self.parent().width() if self.parent() else 0
+        bubble_width = self.width()
+        x = max(0, (parent_width - bubble_width) // 2 + x_offset)
+        self.move(x, 0)  # Y坐标保持0不变
         self.show()
         
         # 设置淡出定时器
