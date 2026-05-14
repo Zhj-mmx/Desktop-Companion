@@ -87,7 +87,7 @@ class DreamiWindow(PetWindow):
         # --- 检查窗口触发 ---
         window_text = self.window_trigger.check()
         if window_text:
-            llm_text = self.llm_client.generate(window_text)  # 直接用 LLMClient 根据窗口标签生成回复
+            llm_text = self.llm_client.generate(window_text,time_text)  # 直接用 LLMClient 根据窗口标签生成回复
             print(f"[DEBUG] 窗口触发: {llm_text}")
             self.bubble.show_message(llm_text)  # 显示 AI 生成的回复
 
