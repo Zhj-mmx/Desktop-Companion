@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta   # 用来处理时间，比如记录“上次说话是几点”和“间隔了多久”
 from typing import Optional, Dict          # 类型标注，让代码更清晰
 from src.utils.llm_client import LLMClient # 导入我们自己写的“AI 大脑”模块
-from src.utils.dialogue_manager import DialogueManager # 导入“对话库管理器”（备用话语）
 from config import settings                # 导入项目设置（本章实际没用到，但留着方便以后扩展）
 import random                              # 用来摇色子，随机生成冷却时间
 
@@ -12,14 +11,12 @@ class SmartReplyManager:
     它来决定：现在能不能说话？说什么话？（是请求 AI，还是从本地对话库里抽一句？）
     """
 
-    def __init__(self, llm_client: LLMClient, dialogue_manager: DialogueManager):
+    def __init__(self, llm_client: LLMClient):
         """
-        初始化方法，传入两个必须的工具：
+        初始化方法
         - llm_client: 那个能跟 DeepSeek 聊天的大脑
-        - dialogue_manager: 本地备用话语库（当网络差或冷却期时救急用）
         """
         self.llm_client = llm_client           # 存下 AI 对话客户端
-        self.dialogue_manager = dialogue_manager  # 存下本地对话库管理器
 
         # 冷却字典：记录每种标签上次成功调用 AI 的时间
         # 比如 self.cooldown_dict["morning"] = 2024-05-11 09:00:00
@@ -49,8 +46,8 @@ class SmartReplyManager:
         last_call_time = self.cooldown_dict.get(tag)
         # 如果之前这个标签调用过 AI，并且距离现在还没过冷却时间
         if last_call_time and datetime.now() - last_call_time < timedelta(seconds=self.cooldown_seconds):
-            # 冷却还没结束，不能频繁打扰 AI，从本地对话库里随便拿一句类似的话
-            return self.dialogue_manager.get_random(tag)
+            # 冷却还没结束，暂时不说话
+            return None
 
         # ---------- 第三关：尝试调用 AI ----------
         reply = self.llm_client.generate(tag, context)
@@ -61,5 +58,5 @@ class SmartReplyManager:
             return reply
 
         # ---------- 第四关：AI 失败或超时 ----------
-        # 如果 AI 请求失败（比如网络断了），退回安全方案，从本地对话库拿话
-        return self.dialogue_manager.get_random(tag)
+        # 如果 AI 请求失败（比如网络断了），暂时不说话
+        return None
