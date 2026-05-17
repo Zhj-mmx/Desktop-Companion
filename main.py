@@ -60,17 +60,12 @@ class DreamiWindow(PetWindow):
     def check_triggers(self):
         """
         这个方法每秒执行一次，它会：
-        1. 询问每个触发器“现在有什么事件吗？”
-        2. 如果有事件（比如时间到了中午），就用智能回复管理器获取一句合适的回复
-        3. 如果拿到了回复，就让气泡显示出来
-        还会额外从对话库里随机抽一句“闲话”来增加存在感。
+        拿到了回复，就让气泡显示出来
         """
         # --- 时间信息 ---
         time_text = self.time_trigger.check()
-
         # --- 空闲信息 ---
         idle_text = self.idle_trigger.check()
-
         # --- 窗口信息 ---
         window_text = self.window_trigger.check()
         if window_text:
