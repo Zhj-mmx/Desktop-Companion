@@ -1,4 +1,4 @@
 # triggers/__init__.py
-from .time_trigger import TimeTrigger
-from .window_trigger import WindowTrigger
-from .idle_trigger import IdleTrigger
+from .time_checker import TimeTrigger
+from .window_checker import WindowTrigger
+from .idle_checker import IdleTrigger

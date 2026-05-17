@@ -25,14 +25,5 @@ class TimeTrigger:
         period = self._get_period()
         if period != self.last_period:
             self.last_period = period
-            # 不同时段的问候语
-            greetings = {
-                '早上': '主人早安～今天也是元气满满的一天！',
-                '上午': '上午好呀，记得喝水哦。',
-                '中午': '该吃午饭啦，Dreami 也想吃一口~',
-                '下午': '下午好，再加把劲就下班啦！',
-                '晚上': '晚上好，今天辛苦了～',
-                '深夜': '这么晚了还不睡，Dreami 要陪你熬夜吗？'
-            }
-            return greetings.get(period, '')
+            return period
         return None  # 时段没变，不说话
