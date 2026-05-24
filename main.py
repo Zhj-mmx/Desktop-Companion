@@ -51,27 +51,22 @@ class DreamiWindow(PetWindow):
 
         # 创建 AI 客户端，指定模型和性格
         self.llm_client = LLMClient(model="deepseek-chat")
+
+        self.smart_reply_manager = SmartReplyManager(self.llm_client) # 智能回复管理器，负责根据触发器状态决定说什么话
     
         # ----- 设置定时器，定期检查触发器状态 -----
         self.timer = QTimer(self)                     # 创建一个定时器
         self.timer.timeout.connect(self.check_triggers) # 每次定时器到时间，就调用 check_triggers 方法
-        self.timer.start(1000)                        # 启动定时器，每隔 1000 毫秒（1秒）触发一次
+        self.timer.start(10000)                        # 启动定时器，每隔 10000 毫秒（10秒）触发一次
 
     def check_triggers(self):
         """
         这个方法每秒执行一次，它会：
         拿到了回复，就让气泡显示出来
         """
-        # --- 时间信息 ---
-        time_text = self.time_trigger.check()
-        # --- 空闲信息 ---
-        idle_text = self.idle_trigger.check()
-        # --- 窗口信息 ---
-        window_text = self.window_trigger.check()
-        if window_text:
-            llm_text = self.llm_client.generate(window_text, time_text, idle_text)  # 使用智能回复管理器生成回复
-            print(f"[Dreami]: {llm_text}")
-            self.bubble.show_message(llm_text)  # 显示 AI 生成的回复
+        llm_text = self.smart_reply_manager.get_reply("default")  # 使用智能回复管理器生成回复
+        print(f"[Dreami]: {llm_text}")
+        self.bubble.show_message(llm_text)  # 显示 AI 生成的回复
 
 
 

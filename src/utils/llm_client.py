@@ -4,6 +4,10 @@ from typing import Optional, Dict, Union
 from openai import OpenAI                     # 注意：现在只用 OpenAI 官方库，不需要 requests
 from config import settings                   # 读取配置中的 API 密钥等
 from src.utils.personality import PERSONALITY_PROMPTS
+from src.core.triggers.idle_checker import IdleTrigger
+from src.core.triggers.time_checker import TimeTrigger
+from src.core.triggers.window_checker import WindowTrigger
+
 # ======================== 2. 创建 DeepSeek 客户端 ========================
 # 这就好比给 Dreami 办了一张“AI 通讯卡”，以后发消息都通过这张卡。
 client = OpenAI(
@@ -32,13 +36,16 @@ class LLMClient:
         """
         self.model = model                     # 记住模型名称
         # 确保personality_prompt是字符串
+        self.time_trigger = TimeTrigger()    # 检测时间，返回如 "morning", "afternoon" 等
+        self.idle_trigger = IdleTrigger()    # 检测用户多久没动，返回如 "idle_10min"
+        self.window_trigger = WindowTrigger() # 检测当前窗口标题，返回如 "coding", "anime"
         if isinstance(personality_prompt, dict):
             self.personality_prompt = personality_prompt.get("default", "")
         else:
             self.personality_prompt = personality_prompt or ""
         self.timeout = settings.LLM_TIMEOUT    # 最多等多长时间（秒）
 
-    def generate(self, window_tag: str, time_tag: str, idle_tag) -> Optional[str]:
+    def generate(self):
         """
         核心方法：根据一个“情境标签”，生成一句 AI 回复。
         例如:
@@ -46,7 +53,7 @@ class LLMClient:
         如果网络超时或其他原因失败，会安静地返回 None。
         """
         # 准备好要对 AI 说的话
-        user_message = self._build_prompt(window_tag, time_tag, idle_tag)   # 将标签转换成具体的问题内容
+        user_message = self._build_prompt()   # 将标签转换成具体的问题内容
 
         try:
             # --- 这下面就是使用 OpenAI 库的“信封”寄信方式 ---
@@ -70,11 +77,17 @@ class LLMClient:
             logging.error(f"LLM请求失败: {e}")
             return None
 
-    def _build_prompt(self, window_tag: str, time_tag: str, idle_tag: str) -> str:
+    def _build_prompt(self) -> str:
         """
         根据标签生成给 AI 的“用户消息”。
         目前很简单，直接返回标签，未来可以混入天气、时间之类的额外信息。
         """
+        # --- 时间信息 ---
+        time_tag = self.time_trigger.check()
+        # --- 空闲信息 ---
+        idle_tag = self.idle_trigger.check()
+        # --- 窗口信息 ---
+        window_tag = self.window_trigger.check()
         # 现在只是原样返回，但你可以在这里发挥想象力，比如：
         # return f"现在的情境是：{tag}，而且外面的天气是{context['weather']}"
         return f"现在的窗口是：{window_tag}, 现在的时间是：{time_tag}, 挂机状态为: {idle_tag}"

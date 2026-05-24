@@ -12,51 +12,26 @@ class SmartReplyManager:
     """
 
     def __init__(self, llm_client: LLMClient):
-        """
-        初始化方法
-        - llm_client: 那个能跟 DeepSeek 聊天的大脑
-        """
         self.llm_client = llm_client           # 存下 AI 对话客户端
-
         # 冷却字典：记录每种标签上次成功调用 AI 的时间
-        # 比如 self.cooldown_dict["morning"] = 2024-05-11 09:00:00
         self.cooldown_dict: Dict[str, datetime] = {}
-
         # 随机生成一个冷却秒数（120~180秒之间），避免老是固定间隔
-        # 这样 Dreami 说话就像真人，有时候话密有时候话稀
-        self.cooldown_seconds = random.randint(120, 180)
+        self.cooldown_seconds = random.randint(15, 60)
 
-    def get_reply(self, tag: str, is_focus_mode: bool, context: Optional[Dict] = None) -> Optional[str]:
+    def get_reply(self, tag: str) -> Optional[str]:
         """
         获取一条回复的核心方法。
-        参数：
-            tag: 触发标签，比如 "morning", "coding", "anime"
-            is_focus_mode: 专注模式开关（True 表示不能说话）
-            context: 可选的环境信息（暂时没用上）
         返回：
             如果应该说话，返回一个字符串句子；如果该闭嘴，返回 None。
         """
-
-        # ---------- 第一关：专注模式 ----------
-        if is_focus_mode:
-            # 如果主人正在专注工作，Dreami 什么都不说，安静得像只小布偶
-            return None
-
-        # ---------- 第二关：AI 冷却检查 ----------
-        last_call_time = self.cooldown_dict.get(tag)
-        # 如果之前这个标签调用过 AI，并且距离现在还没过冷却时间
+        last_call_time = 0
         if last_call_time and datetime.now() - last_call_time < timedelta(seconds=self.cooldown_seconds):
             # 冷却还没结束，暂时不说话
             return None
 
-        # ---------- 第三关：尝试调用 AI ----------
-        reply = self.llm_client.generate(tag, context)
+        reply = self.llm_client.generate()
         if reply:
-            # AI 成功返回了一句漂亮话
-            # 更新冷却时间：记录下当下时间，等下次再想用同一个标签，就要等足冷却秒数
-            self.cooldown_dict[tag] = datetime.now()
+            last_call_time = datetime.now()
             return reply
-
-        # ---------- 第四关：AI 失败或超时 ----------
-        # 如果 AI 请求失败（比如网络断了），暂时不说话
+        # 请求失败（比如网络断了），暂时不说话
         return None
