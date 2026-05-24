@@ -3,14 +3,18 @@
 继承自 QLabel，实现文字提示框功能：
 1. 可在宠物窗口上方显示
 2. 3秒后自动淡出消失
+3. 支持文字自动换行，防止超出屏幕
 """
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtCore import QTimer, QPropertyAnimation, QEasingCurve
+from PyQt5.QtCore import QTimer, QPropertyAnimation, QEasingCurve, Qt
 from PyQt5.QtGui import QColor, QPainter, QBrush, QPen, QFont
 
 class Bubble(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
+        
+        # 启用文字换行
+        self.setWordWrap(True)
         
         # 气泡样式
         self.setStyleSheet("""
@@ -39,9 +43,24 @@ class Bubble(QLabel):
         :param duration: 显示持续时间（毫秒）
         :param x_offset: X轴偏移量（正值向右，负值向左）
         """
+        # 停止正在进行的动画
+        self.fade_animation.stop()
+        # 重置透明度为完全可见
+        self.setWindowOpacity(1.0)
+        
+        parent_width = self.parent().width() if self.parent() else 800
+        # 设置最大宽度为父窗口宽度的80%，留出边距
+        max_width = int(parent_width)
+        self.setMaximumWidth(max_width)
+        
         self.setText(text)
-        self.adjustSize()  # 自动调整大小
-        parent_width = self.parent().width() if self.parent() else 0
+        self.adjustSize()  # 自动调整大小（会根据最大宽度换行）
+        
+        # 确保不超过最大宽度
+        if self.width() > max_width:
+            self.setFixedWidth(max_width)
+            self.adjustSize()
+        
         bubble_width = self.width()
         x = max(0, (parent_width - bubble_width) // 2 + x_offset)
         self.move(x, 0)  # Y坐标保持0不变
